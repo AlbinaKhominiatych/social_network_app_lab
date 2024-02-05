@@ -15,6 +15,7 @@ class SocialNetworkApp:
         password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
         user_data = {
             'password_hash': password_hash.decode('utf-8'),
+            'full_name': '',
             'friends': [],
             'posts': []
         }
@@ -61,3 +62,40 @@ class SocialNetworkApp:
 
         self.redis.hset('users', username, json.dumps(user_data))
         print("Інформація користувача оновлена")
+
+    def search_user_by_name(self, full_name):
+        all_users = self.redis.hgetall('users')
+        for username, user_info in all_users.items():
+            user_data = json.loads(user_info)
+            if user_data.get('full_name') == full_name:
+                return user_data
+        return "Користувач не знайдений"
+
+    def view_user_info(self, username):
+        if self.redis.hexists('users', username):
+            return json.loads(self.redis.hget('users', username))
+        else:
+            return "Користувач не знайдений"
+
+    def view_user_friends(self, username):
+        pass
+
+    def view_user_posts(self, username):
+        pass
+
+    def add_friends(self, username, friend_username):
+        if not self.redis.hexists('users', username) or not self.redis.hexists('users', friend_username):
+            print("Один із користувачів не знайдений")
+            return False
+        user_data = json.loads(self.redis.hget('users', username))
+        if 'friends' not in user_data:
+            user_data['friends'] = []
+        if friend_username not in user_data['friends']:
+            user_data['friends'].append(friend_username)
+            self.redis.hset('users', username, json.dumps(user_data))
+            print(f'{friend_username} доданий до списку друзів {username}')
+            return True
+        else:
+            print(f'{friend_username} вже є в списку друзів {username}')
+            return False
+
