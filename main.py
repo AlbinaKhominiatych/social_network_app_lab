@@ -99,3 +99,18 @@ class SocialNetworkApp:
             print(f'{friend_username} вже є в списку друзів {username}')
             return False
 
+    def add_post(self, username, text):
+        if not self.redis.hexists('users', username):
+            print("Користувач не знайдений!")
+            return False
+        user_data = json.loads(self.redis.hget('users', username))
+        post = {
+            'text': text,
+            'date': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        if 'posts' not in user_data:
+            user_data['posts'] = []
+        user_data['posts'].append(post)
+        self.redis.hset('users', username, json.dumps(user_data))
+        print(f'Нова публікація додана для {username}')
+        return True
